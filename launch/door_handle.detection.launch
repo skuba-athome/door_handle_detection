@@ -1,0 +1,10 @@
+<launch>
+
+  <arg name="config_file" default="$(find object_recognition_tabletop)/conf/detection.table.ros.ork"/>
+
+  <node pkg="object_recognition_core" ns="/ork" name="detection" output="screen" type="detection" args="-c $(arg config_file)">
+  </node>
+
+  <node pkg="door_handle_detection" type="door_handle_detection.py" name="door_handle_detection" output="screen"/>
+
+</launch>
