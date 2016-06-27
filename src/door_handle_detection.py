@@ -2,6 +2,8 @@
 import rospy
 from object_recognition_msgs.msg import TableArray
 from visualization_msgs.msg import MarkerArray, Marker
+from geometry_msgs.msg import PointStamped, Point
+from std_msgs.msg import Header
 import np
 
 class DoorHandleDetection:
@@ -12,6 +14,7 @@ class DoorHandleDetection:
         rospy.Subscriber("ork/table_array", TableArray, self.receive_table_array)
         rospy.Subscriber("ork/tabletop/clusters", MarkerArray, self.receive_clusters)
         self.handles = rospy.Publisher("~cluster", Marker, queue_size=10)
+        self.handles_point = rospy.Publisher("~PointStamped", PointStamped, queue_size=1)
         rospy.spin()
 
     def poly_area_2D(self, pts):
@@ -27,6 +30,8 @@ class DoorHandleDetection:
             size = len(cluster.points)
             if 3000 > size > 100:
                 z = 0
+                x = 0
+                y = 0
                 _min_x = 99
                 _min_y = 99
                 _min_z = 99
@@ -37,6 +42,8 @@ class DoorHandleDetection:
 
                 for point in cluster.points:
                     z += point.z
+                    x += point.x
+                    y += point.y
                     _min_x = min(_min_x, point.x)
                     _min_y = min(_min_y, point.y)
                     _min_z = min(_min_z, point.z)
@@ -47,6 +54,8 @@ class DoorHandleDetection:
 
 
                 z = z/size
+                y = y/size
+                x = x/size
                 width = abs(_min_x - _max_x)
                 height = abs(_min_y - _max_y)
                 depth = abs(_min_z - _max_z)
@@ -55,6 +64,7 @@ class DoorHandleDetection:
                 if abs(z_plane - z) < 0.1 and width < 0.1 and height < 0.1:
                     print "Width: ", width, "Height: ", height, "Depth: ",  depth
                     self.handles.publish(cluster)
+                    self.handles_point.publish(PointStamped(Header(frame_id="camera_depth_optical_frame", stamp=rospy.Time(0)), Point(x=x, y=y, z=z)))
     def receive_table_array(self, table_array):
         min_z = 99
         # self.nearest_table = None
